@@ -1,5 +1,6 @@
 import 'package:cs2_ranking_app/core/database/app_database.dart';
 
+import '../dto/team_dto.dart';
 import '../models/team_model.dart';
 
 class TeamLocalDataSource {
@@ -7,7 +8,7 @@ class TeamLocalDataSource {
     final database = await AppDatabase.open();
     final rows =
         await database.db.query('teams', orderBy: 'rating_overall DESC');
-    return rows.map(TeamModel.fromMap).toList();
+    return rows.map((row) => TeamDto.fromMap(row).toEntity()).toList();
   }
 
   Future<TeamModel?> getById(int id) async {
@@ -15,6 +16,6 @@ class TeamLocalDataSource {
     final rows =
         await database.db.query('teams', where: 'id = ?', whereArgs: [id]);
     if (rows.isEmpty) return null;
-    return TeamModel.fromMap(rows.first);
+    return TeamDto.fromMap(rows.first).toEntity();
   }
 }

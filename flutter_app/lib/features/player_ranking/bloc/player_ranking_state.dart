@@ -1,5 +1,7 @@
-import '../../../core/models/side.dart';
+import '../../../core/enums/side.dart';
 import '../../../data/models/player_model.dart';
+
+typedef RankedPlayer = ({int rank, PlayerModel player});
 
 sealed class PlayerRankingState {
   const PlayerRankingState();
@@ -24,34 +26,25 @@ class PlayerRankingLoaded extends PlayerRankingState {
   final Side selectedSide;
   final String searchQuery;
 
-  List<PlayerModel> get sortedPlayers {
-    final sorted = [...players];
-    sorted.sort((a, b) {
-      final ratingA = a.ratingFor(selectedSide);
-      final ratingB = b.ratingFor(selectedSide);
-      if (ratingA == null && ratingB == null) return 0;
-      if (ratingA == null) return 1;
-      if (ratingB == null) return -1;
-      return ratingB.compareTo(ratingA);
-    });
+  List<RankedPlayer> get rankedPlayers {
+    final playersBySideRating = [...players]..sort(
+        (a, b) =>
+            switch ((a.ratingFor(selectedSide), b.ratingFor(selectedSide))) {
+          (null, null) => 0,
+          (null, _) => 1,
+          (_, null) => -1,
+          (final ratingA?, final ratingB?) => ratingB.compareTo(ratingA),
+        },
+      );
 
-    final ranked = [
-      for (var i = 0; i < sorted.length; i++) sorted[i].copyWithRank(i + 1),
-    ];
+    final allRanked = playersBySideRating.indexed
+        .map((entry) => (rank: entry.$1 + 1, player: entry.$2));
 
     final query = searchQuery.trim().toLowerCase();
-    if (query.isEmpty) return ranked;
-    return ranked
-        .where((p) => p.nickname.toLowerCase().contains(query))
+    if (query.isEmpty) return allRanked.toList();
+    return allRanked
+        .where((ranked) => ranked.player.nickname.toLowerCase().contains(query))
         .toList();
-  }
-
-  PlayerRankingLoaded copyWith({Side? selectedSide, String? searchQuery}) {
-    return PlayerRankingLoaded(
-      players: players,
-      selectedSide: selectedSide ?? this.selectedSide,
-      searchQuery: searchQuery ?? this.searchQuery,
-    );
   }
 }
 

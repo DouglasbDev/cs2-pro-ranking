@@ -14,7 +14,8 @@ class TeamDetailBloc extends Bloc<TeamDetailEvent, TeamDetailState> {
   final TeamRepository _teamRepository;
   final PlayerRepository _playerRepository;
 
-  Future<void> _onLoad(LoadTeamDetail event, Emitter<TeamDetailState> emit) async {
+  Future<void> _onLoad(
+      LoadTeamDetail event, Emitter<TeamDetailState> emit) async {
     emit(const TeamDetailLoading());
     try {
       final team = await _teamRepository.getTeamById(event.teamId);

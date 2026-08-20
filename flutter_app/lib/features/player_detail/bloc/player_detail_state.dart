@@ -1,4 +1,4 @@
-import '../../../core/models/side.dart';
+import '../../../core/enums/side.dart';
 import '../../../data/models/player_model.dart';
 
 sealed class PlayerDetailState {
@@ -18,13 +18,6 @@ class PlayerDetailLoaded extends PlayerDetailState {
 
   final PlayerModel player;
   final Side selectedSide;
-
-  PlayerDetailLoaded copyWith({Side? selectedSide}) {
-    return PlayerDetailLoaded(
-      player: player,
-      selectedSide: selectedSide ?? this.selectedSide,
-    );
-  }
 }
 
 class PlayerDetailError extends PlayerDetailState {

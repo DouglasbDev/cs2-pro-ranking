@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/models/side.dart';
-import '../../../core/navigation/slide_fade_route.dart';
+import '../../../core/enums/side.dart';
+import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/country_flags.dart';
 import '../../../core/widgets/app_image.dart';
@@ -13,10 +13,21 @@ import '../../../core/widgets/side_toggle.dart';
 import '../../../core/widgets/staggered_entrance_list.dart';
 import '../../../data/models/player_model.dart';
 import '../../../data/repositories/player_repository.dart';
-import '../../player_detail/view/player_detail_page.dart';
 import '../bloc/player_ranking_bloc.dart';
 import '../bloc/player_ranking_event.dart';
 import '../bloc/player_ranking_state.dart';
+
+const double _kdDiffColumnWidth = 52.0;
+const double _kdRatioColumnWidth = 40.0;
+const double _ratingColumnWidth = 44.0;
+const int _topRankHighlightThreshold = 3;
+
+const TextStyle _columnLabelStyle = TextStyle(
+  color: AppColors.textSecondary,
+  fontSize: 10,
+  fontWeight: FontWeight.w600,
+  letterSpacing: 0.6,
+);
 
 class PlayerRankingScreen extends StatelessWidget {
   const PlayerRankingScreen({super.key});
@@ -44,42 +55,14 @@ class _PlayerRankingBody extends StatelessWidget {
           PlayerRankingError(:final message) =>
             Center(child: Text('Error loading players: $message')),
           PlayerRankingLoaded(
-            :final sortedPlayers,
+            :final rankedPlayers,
             :final selectedSide,
             :final searchQuery
           ) =>
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: DebouncedSearchField(
-                    hintText: 'Search players...',
-                    onChanged: (query) => context
-                        .read<PlayerRankingBloc>()
-                        .add(SearchQueryChanged(query)),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: SideToggle(
-                      selected: selectedSide,
-                      onChanged: (side) => context
-                          .read<PlayerRankingBloc>()
-                          .add(ChangeSideFilter(side)),
-                    ),
-                  ),
-                ),
-                const _ColumnHeaders(),
-                Expanded(
-                  child: _PlayerList(
-                    players: sortedPlayers,
-                    side: selectedSide,
-                    searchQuery: searchQuery,
-                  ),
-                ),
-              ],
+            _PlayerRankingContent(
+              rankedPlayers: rankedPlayers,
+              selectedSide: selectedSide,
+              searchQuery: searchQuery,
             ),
         };
       },
@@ -87,15 +70,56 @@ class _PlayerRankingBody extends StatelessWidget {
   }
 }
 
+class _PlayerRankingContent extends StatelessWidget {
+  const _PlayerRankingContent({
+    required this.rankedPlayers,
+    required this.selectedSide,
+    required this.searchQuery,
+  });
+
+  final List<RankedPlayer> rankedPlayers;
+  final Side selectedSide;
+  final String searchQuery;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: DebouncedSearchField(
+            hintText: 'Search players...',
+            onChanged: (query) => context
+                .read<PlayerRankingBloc>()
+                .add(SearchQueryChanged(query)),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: SideToggle(
+              selected: selectedSide,
+              onChanged: (side) =>
+                  context.read<PlayerRankingBloc>().add(ChangeSideFilter(side)),
+            ),
+          ),
+        ),
+        const _ColumnHeaders(),
+        Expanded(
+          child: _PlayerList(
+            rankedPlayers: rankedPlayers,
+            side: selectedSide,
+            searchQuery: searchQuery,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ColumnHeaders extends StatelessWidget {
   const _ColumnHeaders();
-
-  static const _labelStyle = TextStyle(
-    color: AppColors.textSecondary,
-    fontSize: 10,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 0.6,
-  );
 
   @override
   Widget build(BuildContext context) {
@@ -105,20 +129,21 @@ class _ColumnHeaders extends StatelessWidget {
         children: [
           Spacer(),
           SizedBox(
-            width: _PlayerRow.kdDiffWidth,
+            width: _kdDiffColumnWidth,
             child: Text('K-D DIFF',
-                textAlign: TextAlign.right, style: _labelStyle),
+                textAlign: TextAlign.right, style: _columnLabelStyle),
           ),
           SizedBox(width: 10),
           SizedBox(
-            width: _PlayerRow.kdRatioWidth,
-            child: Text('K/D', textAlign: TextAlign.right, style: _labelStyle),
+            width: _kdRatioColumnWidth,
+            child: Text('K/D',
+                textAlign: TextAlign.right, style: _columnLabelStyle),
           ),
           SizedBox(width: 12),
           SizedBox(
-            width: _PlayerRow.ratingWidth,
-            child:
-                Text('RATING', textAlign: TextAlign.right, style: _labelStyle),
+            width: _ratingColumnWidth,
+            child: Text('RATING',
+                textAlign: TextAlign.right, style: _columnLabelStyle),
           ),
         ],
       ),
@@ -127,28 +152,44 @@ class _ColumnHeaders extends StatelessWidget {
 }
 
 class _PlayerList extends StatelessWidget {
-  const _PlayerList({required this.players, required this.side, required this.searchQuery});
+  const _PlayerList({
+    required this.rankedPlayers,
+    required this.side,
+    required this.searchQuery,
+  });
 
-  final List<PlayerModel> players;
+  final List<RankedPlayer> rankedPlayers;
   final Side side;
   final String searchQuery;
 
   @override
   Widget build(BuildContext context) {
-    if (players.isEmpty) {
-      return Center(
-        child: Text(
-          searchQuery.isEmpty ? 'No players found' : 'No players match "$searchQuery"',
-        ),
-      );
+    if (rankedPlayers.isEmpty) {
+      return _EmptyState(
+          searchQuery: searchQuery, emptyLabel: 'No players found');
     }
     return StaggeredEntranceList(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      itemCount: players.length,
+      itemCount: rankedPlayers.length,
       itemBuilder: (context, index) {
-        final player = players[index];
-        return _PlayerRow(rank: player.rank ?? index + 1, player: player, side: side);
+        final (:rank, :player) = rankedPlayers[index];
+        return _PlayerRow(rank: rank, player: player, side: side);
       },
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.searchQuery, required this.emptyLabel});
+
+  final String searchQuery;
+  final String emptyLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+          searchQuery.isEmpty ? emptyLabel : 'No results for "$searchQuery"'),
     );
   }
 }
@@ -161,28 +202,22 @@ class _PlayerRow extends StatelessWidget {
   final PlayerModel player;
   final Side side;
 
-  // Shared with _ColumnHeaders so the header labels line up with the values.
-  static const kdDiffWidth = 52.0;
-  static const kdRatioWidth = 40.0;
-  static const ratingWidth = 44.0;
-
   @override
   Widget build(BuildContext context) {
     final rating = player.ratingFor(side);
     final kdDiff = player.kdDiffFor(side);
-    final isTopThree = rank <= 3;
+    final isTopRank = rank <= _topRankHighlightThreshold;
     final flag = countryFlag(player.country);
 
     return PressableScale(
-      onTap: () => Navigator.of(context).push(
-        slideFadeRoute(PlayerDetailScreen(playerId: player.id)),
-      ),
+      onTap: () => Navigator.of(context)
+          .pushNamed(AppRoutes.playerDetail, arguments: player.id),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: isTopThree
+          border: isTopRank
               ? const Border(left: BorderSide(color: AppColors.gold, width: 3))
               : null,
         ),
@@ -196,59 +231,23 @@ class _PlayerRow extends StatelessWidget {
               AppImage(assetPath: player.imageUrl, size: 40),
               const SizedBox(width: 12),
               Expanded(
-                child: Row(
-                  children: [
-                    if (flag.isNotEmpty) ...[
-                      Text(flag, style: const TextStyle(fontSize: 14)),
-                      const SizedBox(width: 6),
-                    ],
-                    Flexible(
-                      child: Text(
-                        player.nickname,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 16),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // K-D Diff: kills minus deaths for the selected side — green
-              // when the player got more kills than deaths, red otherwise.
-              SizedBox(
-                width: kdDiffWidth,
-                child: Text(
-                  kdDiff == null ? '—' : (kdDiff > 0 ? '+$kdDiff' : '$kdDiff'),
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    color: switch (kdDiff) {
-                      null => AppColors.textSecondary,
-                      > 0 => AppColors.positive,
-                      < 0 => AppColors.negative,
-                      _ => AppColors.textSecondary,
-                    },
-                    fontSize: 13,
-                  ),
-                ),
-              ),
+                  child: _PlayerNameAndFlag(
+                      nickname: player.nickname, flag: flag)),
+              _KdDiffLabel(kdDiff: kdDiff),
               const SizedBox(width: 10),
-              // K/D ratio: kills / deaths (overall, HLTV doesn't split this
-              // one by side either) — separate from the Rating below.
-              SizedBox(
-                width: kdRatioWidth,
+              _RightAlignedColumn(
+                width: _kdRatioColumnWidth,
                 child: Text(
                   player.kdRatio?.toStringAsFixed(2) ?? '—',
-                  textAlign: TextAlign.right,
                   style: const TextStyle(
                       color: AppColors.textSecondary, fontSize: 13),
                 ),
               ),
               const SizedBox(width: 12),
-              SizedBox(
-                width: ratingWidth,
+              _RightAlignedColumn(
+                width: _ratingColumnWidth,
                 child: Text(
                   rating?.toStringAsFixed(2) ?? '—',
-                  textAlign: TextAlign.right,
                   style: const TextStyle(
                     color: AppColors.gold,
                     fontWeight: FontWeight.bold,
@@ -260,6 +259,72 @@ class _PlayerRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _PlayerNameAndFlag extends StatelessWidget {
+  const _PlayerNameAndFlag({required this.nickname, required this.flag});
+
+  final String nickname;
+  final String flag;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        if (flag.isNotEmpty) ...[
+          Text(flag, style: const TextStyle(fontSize: 14)),
+          const SizedBox(width: 6),
+        ],
+        Flexible(
+          child: Text(
+            nickname,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RightAlignedColumn extends StatelessWidget {
+  const _RightAlignedColumn({required this.width, required this.child});
+
+  final double width;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+        width: width,
+        child: Align(alignment: Alignment.centerRight, child: child));
+  }
+}
+
+class _KdDiffLabel extends StatelessWidget {
+  const _KdDiffLabel({required this.kdDiff});
+
+  final int? kdDiff;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (kdDiff) {
+      null => AppColors.textSecondary,
+      > 0 => AppColors.positive,
+      < 0 => AppColors.negative,
+      _ => AppColors.textSecondary,
+    };
+    final label = switch (kdDiff) {
+      null => '—',
+      > 0 => '+$kdDiff',
+      _ => '$kdDiff',
+    };
+
+    return _RightAlignedColumn(
+      width: _kdDiffColumnWidth,
+      child: Text(label, style: TextStyle(color: color, fontSize: 13)),
     );
   }
 }

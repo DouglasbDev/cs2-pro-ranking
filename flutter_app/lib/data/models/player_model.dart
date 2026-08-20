@@ -1,5 +1,8 @@
-import '../../core/models/side.dart';
+import '../../core/enums/side.dart';
 
+/// Domain entity — pure data, no parsing concerns (see [PlayerDto] for
+/// that) and no ranking-context concept (see the ranking Bloc states for
+/// where a player's position in a list is computed).
 class PlayerModel {
   const PlayerModel({
     required this.id,
@@ -27,7 +30,6 @@ class PlayerModel {
     this.assistsPerRound,
     this.mapsPlayed,
     this.imageUrl,
-    this.rank,
   });
 
   final int id;
@@ -55,68 +57,6 @@ class PlayerModel {
   final double? assistsPerRound;
   final int? mapsPlayed;
   final String? imageUrl;
-  final int? rank;
-
-  PlayerModel copyWithRank(int rank) {
-    return PlayerModel(
-      id: id,
-      nickname: nickname,
-      fullName: fullName,
-      age: age,
-      country: country,
-      teamId: teamId,
-      teamName: teamName,
-      ratingOverall: ratingOverall,
-      ratingCtSide: ratingCtSide,
-      ratingTSide: ratingTSide,
-      kdRatio: kdRatio,
-      kdDiffCtSide: kdDiffCtSide,
-      kdDiffTSide: kdDiffTSide,
-      roundsPlayedCtSide: roundsPlayedCtSide,
-      roundsPlayedTSide: roundsPlayedTSide,
-      totalKills: totalKills,
-      totalDeaths: totalDeaths,
-      damagePerRound: damagePerRound,
-      headshotPercentage: headshotPercentage,
-      kastPercentage: kastPercentage,
-      killsPerRound: killsPerRound,
-      deathsPerRound: deathsPerRound,
-      assistsPerRound: assistsPerRound,
-      mapsPlayed: mapsPlayed,
-      imageUrl: imageUrl,
-      rank: rank,
-    );
-  }
-
-  factory PlayerModel.fromMap(Map<String, Object?> map) {
-    return PlayerModel(
-      id: map['id'] as int,
-      nickname: map['nickname'] as String,
-      fullName: map['full_name'] as String?,
-      age: map['age'] as int?,
-      country: map['country'] as String?,
-      teamId: map['team_id'] as int?,
-      teamName: map['team_name'] as String?,
-      ratingOverall: (map['rating_overall'] as num?)?.toDouble(),
-      ratingCtSide: (map['rating_ct_side'] as num?)?.toDouble(),
-      ratingTSide: (map['rating_t_side'] as num?)?.toDouble(),
-      kdRatio: (map['kd_ratio'] as num?)?.toDouble(),
-      kdDiffCtSide: map['kd_diff_ct_side'] as int?,
-      kdDiffTSide: map['kd_diff_t_side'] as int?,
-      roundsPlayedCtSide: map['rounds_played_ct_side'] as int?,
-      roundsPlayedTSide: map['rounds_played_t_side'] as int?,
-      totalKills: map['total_kills'] as int?,
-      totalDeaths: map['total_deaths'] as int?,
-      damagePerRound: (map['damage_per_round'] as num?)?.toDouble(),
-      headshotPercentage: (map['headshot_percentage'] as num?)?.toDouble(),
-      kastPercentage: (map['kast_percentage'] as num?)?.toDouble(),
-      killsPerRound: (map['kills_per_round'] as num?)?.toDouble(),
-      deathsPerRound: (map['deaths_per_round'] as num?)?.toDouble(),
-      assistsPerRound: (map['assists_per_round'] as num?)?.toDouble(),
-      mapsPlayed: map['maps_played'] as int?,
-      imageUrl: map['image_url'] as String?,
-    );
-  }
 }
 
 extension PlayerSideStats on PlayerModel {
@@ -127,9 +67,10 @@ extension PlayerSideStats on PlayerModel {
       };
 
   int? kdDiffFor(Side side) => switch (side) {
-        Side.both => (totalKills != null && totalDeaths != null)
-            ? totalKills! - totalDeaths!
-            : null,
+        Side.both => switch ((totalKills, totalDeaths)) {
+            (final kills?, final deaths?) => kills - deaths,
+            _ => null,
+          },
         Side.ct => kdDiffCtSide,
         Side.t => kdDiffTSide,
       };

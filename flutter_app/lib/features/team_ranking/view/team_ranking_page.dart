@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/navigation/slide_fade_route.dart';
+import '../../../core/navigation/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/country_flags.dart';
 import '../../../core/widgets/app_image.dart';
@@ -11,10 +11,11 @@ import '../../../core/widgets/rank_badge.dart';
 import '../../../core/widgets/staggered_entrance_list.dart';
 import '../../../data/models/team_model.dart';
 import '../../../data/repositories/team_repository.dart';
-import '../../team_detail/view/team_detail_page.dart';
 import '../bloc/team_ranking_bloc.dart';
 import '../bloc/team_ranking_event.dart';
 import '../bloc/team_ranking_state.dart';
+
+const int _topRankHighlightThreshold = 3;
 
 class TeamRankingScreen extends StatelessWidget {
   const TeamRankingScreen({super.key});
@@ -41,7 +42,7 @@ class _TeamRankingBody extends StatelessWidget {
               child: CircularProgressIndicator(color: AppColors.gold)),
           TeamRankingError(:final message) =>
             Center(child: Text('Error loading teams: $message')),
-          TeamRankingLoaded(:final filteredTeams, :final searchQuery) => Column(
+          TeamRankingLoaded(:final rankedTeams, :final searchQuery) => Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -53,7 +54,8 @@ class _TeamRankingBody extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: _TeamList(teams: filteredTeams, searchQuery: searchQuery),
+                  child: _TeamList(
+                      rankedTeams: rankedTeams, searchQuery: searchQuery),
                 ),
               ],
             ),
@@ -64,26 +66,26 @@ class _TeamRankingBody extends StatelessWidget {
 }
 
 class _TeamList extends StatelessWidget {
-  const _TeamList({required this.teams, required this.searchQuery});
+  const _TeamList({required this.rankedTeams, required this.searchQuery});
 
-  final List<TeamModel> teams;
+  final List<RankedTeam> rankedTeams;
   final String searchQuery;
 
   @override
   Widget build(BuildContext context) {
-    if (teams.isEmpty) {
+    if (rankedTeams.isEmpty) {
       return Center(
-        child: Text(
-          searchQuery.isEmpty ? 'No teams found' : 'No teams match "$searchQuery"',
-        ),
+        child: Text(searchQuery.isEmpty
+            ? 'No teams found'
+            : 'No results for "$searchQuery"'),
       );
     }
     return StaggeredEntranceList(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      itemCount: teams.length,
+      itemCount: rankedTeams.length,
       itemBuilder: (context, index) {
-        final team = teams[index];
-        return _TeamRow(rank: team.rank ?? index + 1, team: team);
+        final (:rank, :team) = rankedTeams[index];
+        return _TeamRow(rank: rank, team: team);
       },
     );
   }
@@ -97,19 +99,18 @@ class _TeamRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTopThree = rank <= 3;
+    final isTopRank = rank <= _topRankHighlightThreshold;
     final flag = countryFlag(team.country);
 
     return PressableScale(
-      onTap: () => Navigator.of(context).push(
-        slideFadeRoute(TeamDetailScreen(teamId: team.id)),
-      ),
+      onTap: () => Navigator.of(context)
+          .pushNamed(AppRoutes.teamDetail, arguments: team.id),
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(16),
-          border: isTopThree
+          border: isTopRank
               ? const Border(left: BorderSide(color: AppColors.gold, width: 3))
               : null,
         ),
@@ -127,24 +128,7 @@ class _TeamRow extends StatelessWidget {
                 fallbackIcon: Icons.shield,
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: Row(
-                  children: [
-                    if (flag.isNotEmpty) ...[
-                      Text(flag, style: const TextStyle(fontSize: 14)),
-                      const SizedBox(width: 6),
-                    ],
-                    Flexible(
-                      child: Text(
-                        team.name,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 16),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              Expanded(child: _TeamNameAndFlag(name: team.name, flag: flag)),
               Text(
                 team.ratingOverall?.toStringAsFixed(2) ?? '—',
                 style: const TextStyle(
@@ -157,6 +141,32 @@ class _TeamRow extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _TeamNameAndFlag extends StatelessWidget {
+  const _TeamNameAndFlag({required this.name, required this.flag});
+
+  final String name;
+  final String flag;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        if (flag.isNotEmpty) ...[
+          Text(flag, style: const TextStyle(fontSize: 14)),
+          const SizedBox(width: 6),
+        ],
+        Flexible(
+          child: Text(
+            name,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -13,7 +13,8 @@ class PlayerRankingBloc extends Bloc<PlayerRankingEvent, PlayerRankingState> {
 
   final PlayerRepository _repository;
 
-  Future<void> _onLoad(LoadPlayerRanking event, Emitter<PlayerRankingState> emit) async {
+  Future<void> _onLoad(
+      LoadPlayerRanking event, Emitter<PlayerRankingState> emit) async {
     emit(const PlayerRankingLoading());
     try {
       final players = await _repository.getPlayerRanking();
@@ -24,16 +25,23 @@ class PlayerRankingBloc extends Bloc<PlayerRankingEvent, PlayerRankingState> {
   }
 
   void _onChangeSide(ChangeSideFilter event, Emitter<PlayerRankingState> emit) {
-    final current = state;
-    if (current is PlayerRankingLoaded) {
-      emit(current.copyWith(selectedSide: event.side));
+    if (state case PlayerRankingLoaded(:final players, :final searchQuery)) {
+      emit(PlayerRankingLoaded(
+        players: players,
+        selectedSide: event.side,
+        searchQuery: searchQuery,
+      ));
     }
   }
 
-  void _onSearchQueryChanged(SearchQueryChanged event, Emitter<PlayerRankingState> emit) {
-    final current = state;
-    if (current is PlayerRankingLoaded) {
-      emit(current.copyWith(searchQuery: event.query));
+  void _onSearchQueryChanged(
+      SearchQueryChanged event, Emitter<PlayerRankingState> emit) {
+    if (state case PlayerRankingLoaded(:final players, :final selectedSide)) {
+      emit(PlayerRankingLoaded(
+        players: players,
+        selectedSide: selectedSide,
+        searchQuery: event.query,
+      ));
     }
   }
 }

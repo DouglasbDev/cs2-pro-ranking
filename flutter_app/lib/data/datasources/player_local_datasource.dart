@@ -1,5 +1,6 @@
 import 'package:cs2_ranking_app/core/database/app_database.dart';
 
+import '../dto/player_dto.dart';
 import '../models/player_model.dart';
 
 class PlayerLocalDataSource {
@@ -14,7 +15,7 @@ class PlayerLocalDataSource {
     final rows = await database.db.rawQuery(
       '$_selectWithTeam ORDER BY p.rating_overall DESC',
     );
-    return rows.map(PlayerModel.fromMap).toList();
+    return rows.map((row) => PlayerDto.fromMap(row).toEntity()).toList();
   }
 
   Future<PlayerModel?> getById(int id) async {
@@ -24,7 +25,7 @@ class PlayerLocalDataSource {
       [id],
     );
     if (rows.isEmpty) return null;
-    return PlayerModel.fromMap(rows.first);
+    return PlayerDto.fromMap(rows.first).toEntity();
   }
 
   Future<List<PlayerModel>> getRosterByTeamId(int teamId) async {
@@ -33,6 +34,6 @@ class PlayerLocalDataSource {
       '$_selectWithTeam WHERE p.team_id = ? ORDER BY p.rating_overall DESC',
       [teamId],
     );
-    return rows.map(PlayerModel.fromMap).toList();
+    return rows.map((row) => PlayerDto.fromMap(row).toEntity()).toList();
   }
 }

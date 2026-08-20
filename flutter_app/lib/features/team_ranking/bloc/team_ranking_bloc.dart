@@ -12,7 +12,8 @@ class TeamRankingBloc extends Bloc<TeamRankingEvent, TeamRankingState> {
 
   final TeamRepository _repository;
 
-  Future<void> _onLoad(LoadTeamRanking event, Emitter<TeamRankingState> emit) async {
+  Future<void> _onLoad(
+      LoadTeamRanking event, Emitter<TeamRankingState> emit) async {
     emit(const TeamRankingLoading());
     try {
       final teams = await _repository.getTeamRanking();
@@ -22,10 +23,10 @@ class TeamRankingBloc extends Bloc<TeamRankingEvent, TeamRankingState> {
     }
   }
 
-  void _onSearchQueryChanged(TeamSearchQueryChanged event, Emitter<TeamRankingState> emit) {
-    final current = state;
-    if (current is TeamRankingLoaded) {
-      emit(current.copyWith(searchQuery: event.query));
+  void _onSearchQueryChanged(
+      TeamSearchQueryChanged event, Emitter<TeamRankingState> emit) {
+    if (state case TeamRankingLoaded(:final teams)) {
+      emit(TeamRankingLoaded(teams: teams, searchQuery: event.query));
     }
   }
 }

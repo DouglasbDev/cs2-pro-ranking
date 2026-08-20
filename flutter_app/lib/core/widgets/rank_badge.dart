@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../formatters/rank_label.dart';
 import '../theme/app_colors.dart';
 
+const double _badgeWidth = 32.0;
+
+/// Purely a display: text formatting (zero-padding) lives in [RankLabel],
+/// this widget just renders whatever string it's handed.
 class RankBadge extends StatelessWidget {
   const RankBadge({super.key, required this.rank});
 
@@ -10,9 +15,9 @@ class RankBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 32,
+      width: _badgeWidth,
       child: Text(
-        rank.toString().padLeft(2, '0'),
+        rank.rankLabel,
         style: const TextStyle(
           color: AppColors.gold,
           fontWeight: FontWeight.bold,

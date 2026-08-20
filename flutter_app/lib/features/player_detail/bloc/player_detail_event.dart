@@ -1,4 +1,4 @@
-import '../../../core/models/side.dart';
+import '../../../core/enums/side.dart';
 
 sealed class PlayerDetailEvent {
   const PlayerDetailEvent();

@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../core/models/side.dart';
+import '../../../core/enums/side.dart';
 import '../../../data/repositories/player_repository.dart';
 import 'player_detail_event.dart';
 import 'player_detail_state.dart';
@@ -13,7 +13,8 @@ class PlayerDetailBloc extends Bloc<PlayerDetailEvent, PlayerDetailState> {
 
   final PlayerRepository _repository;
 
-  Future<void> _onLoad(LoadPlayerDetail event, Emitter<PlayerDetailState> emit) async {
+  Future<void> _onLoad(
+      LoadPlayerDetail event, Emitter<PlayerDetailState> emit) async {
     emit(const PlayerDetailLoading());
     try {
       final player = await _repository.getPlayerById(event.playerId);
@@ -28,9 +29,8 @@ class PlayerDetailBloc extends Bloc<PlayerDetailEvent, PlayerDetailState> {
   }
 
   void _onChangeSide(ChangeSideFilter event, Emitter<PlayerDetailState> emit) {
-    final current = state;
-    if (current is PlayerDetailLoaded) {
-      emit(current.copyWith(selectedSide: event.side));
+    if (state case PlayerDetailLoaded(:final player)) {
+      emit(PlayerDetailLoaded(player: player, selectedSide: event.side));
     }
   }
 }

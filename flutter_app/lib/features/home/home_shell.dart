@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/segment_alignment.dart';
 import '../player_ranking/view/player_ranking_page.dart';
 import '../team_ranking/view/team_ranking_page.dart';
 
-const _switcherDuration = Duration(milliseconds: 240);
-const _switcherCurve = Curves.easeOutCubic;
+const Duration _switcherDuration = Duration(milliseconds: 240);
+const Curve _switcherCurve = Curves.easeOutCubic;
+const double _switcherHeight = 58.0;
+const int _switcherSegmentCount = 2;
+
+const List<String> _screenTitles = ['CS2\nPRO RANKING', 'CS2\nTEAM RANKING'];
+const List<String> _screenSubtitles = ['TOP PLAYERS', 'TOP TEAMS'];
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -15,10 +21,7 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
-
-  static const _titles = ['CS2\nPRO RANKING', 'CS2\nTEAM RANKING'];
-  static const _subtitles = ['TOP PLAYERS', 'TOP TEAMS'];
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -27,61 +30,16 @@ class _HomeShellState extends State<HomeShell> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _titles[_index],
-                    style: const TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.w900,
-                      height: 1.1,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceAlt,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          _subtitles[_index],
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          '· Updated locally',
-                          style: TextStyle(
-                              color: AppColors.textSecondary, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _ScreenHeader(index: _selectedIndex),
             Expanded(
               child: IndexedStack(
-                index: _index,
+                index: _selectedIndex,
                 children: const [PlayerRankingScreen(), TeamRankingScreen()],
               ),
             ),
             _BottomSwitcher(
-              index: _index,
-              onChanged: (i) => setState(() => _index = i),
+              index: _selectedIndex,
+              onChanged: (index) => setState(() => _selectedIndex = index),
             ),
           ],
         ),
@@ -90,16 +48,55 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
+class _ScreenHeader extends StatelessWidget {
+  const _ScreenHeader({required this.index});
+
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _screenTitles[index],
+            style: const TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w900,
+              height: 1.1,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceAlt,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              _screenSubtitles[index],
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _BottomSwitcher extends StatelessWidget {
-  const _BottomSwitcher({
-    required this.index,
-    required this.onChanged,
-  });
+  const _BottomSwitcher({required this.index, required this.onChanged});
 
   final int index;
   final ValueChanged<int> onChanged;
-
-  static const _height = 58.0;
 
   @override
   Widget build(BuildContext context) {
@@ -113,19 +110,22 @@ class _BottomSwitcher extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final totalWidth = constraints.maxWidth;
-          final segmentWidth = totalWidth / 2;
+          final segmentWidth = totalWidth / _switcherSegmentCount;
+          final alignX = segmentAlignmentX(
+              selectedIndex: index, segmentCount: _switcherSegmentCount);
+
           return SizedBox(
             width: totalWidth,
-            height: _height,
+            height: _switcherHeight,
             child: Stack(
               children: [
                 AnimatedAlign(
                   duration: _switcherDuration,
                   curve: _switcherCurve,
-                  alignment: Alignment(index == 0 ? -1.0 : 1.0, 0),
+                  alignment: Alignment(alignX, 0),
                   child: Container(
                     width: segmentWidth,
-                    height: _height,
+                    height: _switcherHeight,
                     decoration: BoxDecoration(
                       color: AppColors.gold,
                       borderRadius: BorderRadius.circular(14),
@@ -136,7 +136,7 @@ class _BottomSwitcher extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: segmentWidth,
-                      height: _height,
+                      height: _switcherHeight,
                       child: _SwitcherItem(
                         icon: Icons.leaderboard_rounded,
                         label: 'ranking',
@@ -146,7 +146,7 @@ class _BottomSwitcher extends StatelessWidget {
                     ),
                     SizedBox(
                       width: segmentWidth,
-                      height: _height,
+                      height: _switcherHeight,
                       child: _SwitcherItem(
                         icon: Icons.groups_rounded,
                         label: 'teams',

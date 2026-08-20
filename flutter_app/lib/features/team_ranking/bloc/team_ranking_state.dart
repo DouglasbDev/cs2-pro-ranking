@@ -1,5 +1,10 @@
 import '../../../data/models/team_model.dart';
 
+/// A team paired with its position in the full ranked list — computed once
+/// from the unfiltered list (teams already arrive rating-sorted from the
+/// repository) so a search filter never changes what rank a team shows.
+typedef RankedTeam = ({int rank, TeamModel team});
+
 sealed class TeamRankingState {
   const TeamRankingState();
 }
@@ -18,21 +23,15 @@ class TeamRankingLoaded extends TeamRankingState {
   final List<TeamModel> teams;
   final String searchQuery;
 
-  List<TeamModel> get filteredTeams {
-    // Same rule as players: rank reflects position in the full list (teams
-    // already arrive rating-sorted from the repository), assigned before
-    // any search filtering — never recomputed from a filtered index.
-    final ranked = [
-      for (var i = 0; i < teams.length; i++) teams[i].copyWithRank(i + 1),
-    ];
+  List<RankedTeam> get rankedTeams {
+    final allRanked =
+        teams.indexed.map((entry) => (rank: entry.$1 + 1, team: entry.$2));
 
     final query = searchQuery.trim().toLowerCase();
-    if (query.isEmpty) return ranked;
-    return ranked.where((t) => t.name.toLowerCase().contains(query)).toList();
-  }
-
-  TeamRankingLoaded copyWith({String? searchQuery}) {
-    return TeamRankingLoaded(teams: teams, searchQuery: searchQuery ?? this.searchQuery);
+    if (query.isEmpty) return allRanked.toList();
+    return allRanked
+        .where((ranked) => ranked.team.name.toLowerCase().contains(query))
+        .toList();
   }
 }
 

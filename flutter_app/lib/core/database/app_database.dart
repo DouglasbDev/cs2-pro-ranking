@@ -20,13 +20,8 @@ class AppDatabase {
 
     final bytes = await rootBundle.load(_assetPath);
 
-    // The bundled dataset is read-only (the app never writes to it), so
-    // there's nothing on-device worth preserving. Re-copy whenever the
-    // bundled asset doesn't match what's already there — not just on first
-    // install — so a rebuilt asset (new scrape/import) actually reaches
-    // the device instead of silently keeping whatever was copied the very
-    // first time the app ever ran.
-    final needsCopy = !await dbFile.exists() || await dbFile.length() != bytes.lengthInBytes;
+    final needsCopy =
+        !await dbFile.exists() || await dbFile.length() != bytes.lengthInBytes;
     if (needsCopy) {
       await dbFile.writeAsBytes(
         bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),

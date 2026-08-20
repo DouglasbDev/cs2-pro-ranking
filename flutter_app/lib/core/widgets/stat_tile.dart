@@ -29,7 +29,7 @@ class StatTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              if (icon != null) ...[
+              if (icon case IconData()) ...[
                 Icon(icon, size: 14, color: AppColors.textSecondary),
                 const SizedBox(width: 6),
               ],
