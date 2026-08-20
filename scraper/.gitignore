@@ -1,0 +1,15 @@
+# Python / scraper
+venv/
+__pycache__/
+*.pyc
+output/
+
+# Proteção contra venv criado por engano com nome errado
+Scripts/
+pyvenv.cfg
+Include/
+Lib/
+
+# Segurança - nunca versionar
+*.env
+*token*
