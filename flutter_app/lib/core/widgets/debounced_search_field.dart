@@ -4,9 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-/// A search box that only calls [onChanged] after the user stops typing
-/// for [debounce] — each keystroke resets the timer, so a fast typist
-/// never triggers a filter pass per character, only once they pause.
 class DebouncedSearchField extends StatefulWidget {
   const DebouncedSearchField({
     super.key,
@@ -61,12 +58,15 @@ class _DebouncedSearchFieldState extends State<DebouncedSearchField> {
         cursorColor: AppColors.gold,
         decoration: InputDecoration(
           hintText: widget.hintText,
-          hintStyle: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
-          prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary, size: 20),
+          hintStyle:
+              const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+          prefixIcon: const Icon(Icons.search,
+              color: AppColors.textSecondary, size: 20),
           suffixIcon: _controller.text.isEmpty
               ? null
               : IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textSecondary, size: 18),
+                  icon: const Icon(Icons.close,
+                      color: AppColors.textSecondary, size: 18),
                   onPressed: _clear,
                 ),
           border: InputBorder.none,

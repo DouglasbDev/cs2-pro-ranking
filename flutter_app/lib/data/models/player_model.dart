@@ -55,12 +55,6 @@ class PlayerModel {
   final double? assistsPerRound;
   final int? mapsPlayed;
   final String? imageUrl;
-
-  /// Position in the full ranked list for the side it was computed under —
-  /// assigned once by whoever sorts the complete list (see
-  /// PlayerRankingLoaded.sortedPlayers), never recomputed from a filtered
-  /// list's index. Null for players fetched outside a ranking context
-  /// (player detail, team roster).
   final int? rank;
 
   PlayerModel copyWithRank(int rank) {
@@ -133,8 +127,9 @@ extension PlayerSideStats on PlayerModel {
       };
 
   int? kdDiffFor(Side side) => switch (side) {
-        Side.both =>
-          (totalKills != null && totalDeaths != null) ? totalKills! - totalDeaths! : null,
+        Side.both => (totalKills != null && totalDeaths != null)
+            ? totalKills! - totalDeaths!
+            : null,
         Side.ct => kdDiffCtSide,
         Side.t => kdDiffTSide,
       };

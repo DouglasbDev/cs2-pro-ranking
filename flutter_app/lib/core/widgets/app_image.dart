@@ -2,16 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-/// Shows a bundled asset image (player photo / team logo) referenced by a
-/// nullable asset-relative path from the DB. Falls back to a placeholder
-/// icon when the path is null/empty or the asset doesn't exist.
-///
-/// Team logos (`shape: BoxShape.rectangle`) get a light card behind them:
-/// crests scraped from prosettings.net are commonly monochrome (often pure
-/// black) art on a transparent background, built for light UIs — without a
-/// light backing they disappear against this app's dark theme. Player
-/// photos are full-frame photographs with no transparency, so they don't
-/// need it and stay circular with no backing card.
 class AppImage extends StatelessWidget {
   const AppImage({
     super.key,

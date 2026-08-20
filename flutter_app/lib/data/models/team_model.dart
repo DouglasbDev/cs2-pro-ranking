@@ -31,11 +31,6 @@ class TeamModel {
   final int? kdDiff;
   final double? ratingOverall;
   final String? logoUrl;
-
-  /// Position in the full ranked list — assigned once by whoever sorts the
-  /// complete list (see TeamRankingLoaded.filteredTeams), never recomputed
-  /// from a filtered list's index. Null for teams fetched outside a
-  /// ranking context (team detail).
   final int? rank;
 
   TeamModel copyWithRank(int rank) {

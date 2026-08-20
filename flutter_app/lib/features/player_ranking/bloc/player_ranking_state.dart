@@ -25,9 +25,6 @@ class PlayerRankingLoaded extends PlayerRankingState {
   final String searchQuery;
 
   List<PlayerModel> get sortedPlayers {
-    // Rank must reflect each player's position in the FULL list for the
-    // current side, not the index within whatever search happens to leave
-    // visible — so sort+rank first, filter after, never the other way.
     final sorted = [...players];
     sorted.sort((a, b) {
       final ratingA = a.ratingFor(selectedSide);
@@ -44,7 +41,9 @@ class PlayerRankingLoaded extends PlayerRankingState {
 
     final query = searchQuery.trim().toLowerCase();
     if (query.isEmpty) return ranked;
-    return ranked.where((p) => p.nickname.toLowerCase().contains(query)).toList();
+    return ranked
+        .where((p) => p.nickname.toLowerCase().contains(query))
+        .toList();
   }
 
   PlayerRankingLoaded copyWith({Side? selectedSide, String? searchQuery}) {
