@@ -8,6 +8,7 @@ class PlayerRankingBloc extends Bloc<PlayerRankingEvent, PlayerRankingState> {
   PlayerRankingBloc(this._repository) : super(const PlayerRankingInitial()) {
     on<LoadPlayerRanking>(_onLoad);
     on<ChangeSideFilter>(_onChangeSide);
+    on<SearchQueryChanged>(_onSearchQueryChanged);
   }
 
   final PlayerRepository _repository;
@@ -26,6 +27,13 @@ class PlayerRankingBloc extends Bloc<PlayerRankingEvent, PlayerRankingState> {
     final current = state;
     if (current is PlayerRankingLoaded) {
       emit(current.copyWith(selectedSide: event.side));
+    }
+  }
+
+  void _onSearchQueryChanged(SearchQueryChanged event, Emitter<PlayerRankingState> emit) {
+    final current = state;
+    if (current is PlayerRankingLoaded) {
+      emit(current.copyWith(searchQuery: event.query));
     }
   }
 }

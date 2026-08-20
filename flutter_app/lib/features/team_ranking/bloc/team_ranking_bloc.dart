@@ -7,6 +7,7 @@ import 'team_ranking_state.dart';
 class TeamRankingBloc extends Bloc<TeamRankingEvent, TeamRankingState> {
   TeamRankingBloc(this._repository) : super(const TeamRankingInitial()) {
     on<LoadTeamRanking>(_onLoad);
+    on<TeamSearchQueryChanged>(_onSearchQueryChanged);
   }
 
   final TeamRepository _repository;
@@ -15,9 +16,16 @@ class TeamRankingBloc extends Bloc<TeamRankingEvent, TeamRankingState> {
     emit(const TeamRankingLoading());
     try {
       final teams = await _repository.getTeamRanking();
-      emit(TeamRankingLoaded(teams));
+      emit(TeamRankingLoaded(teams: teams));
     } catch (e) {
       emit(TeamRankingError(e.toString()));
+    }
+  }
+
+  void _onSearchQueryChanged(TeamSearchQueryChanged event, Emitter<TeamRankingState> emit) {
+    final current = state;
+    if (current is TeamRankingLoaded) {
+      emit(current.copyWith(searchQuery: event.query));
     }
   }
 }

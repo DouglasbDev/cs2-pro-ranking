@@ -13,3 +13,9 @@ class ChangeSideFilter extends PlayerRankingEvent {
 
   final Side side;
 }
+
+class SearchQueryChanged extends PlayerRankingEvent {
+  const SearchQueryChanged(this.query);
+
+  final String query;
+}

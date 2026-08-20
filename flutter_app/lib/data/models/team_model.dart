@@ -14,6 +14,7 @@ class TeamModel {
     this.kdDiff,
     this.ratingOverall,
     this.logoUrl,
+    this.rank,
   });
 
   final int id;
@@ -30,6 +31,32 @@ class TeamModel {
   final int? kdDiff;
   final double? ratingOverall;
   final String? logoUrl;
+
+  /// Position in the full ranked list — assigned once by whoever sorts the
+  /// complete list (see TeamRankingLoaded.filteredTeams), never recomputed
+  /// from a filtered list's index. Null for teams fetched outside a
+  /// ranking context (team detail).
+  final int? rank;
+
+  TeamModel copyWithRank(int rank) {
+    return TeamModel(
+      id: id,
+      name: name,
+      country: country,
+      mapsPlayed: mapsPlayed,
+      wins: wins,
+      draws: draws,
+      losses: losses,
+      totalKills: totalKills,
+      totalDeaths: totalDeaths,
+      roundsPlayed: roundsPlayed,
+      kdRatio: kdRatio,
+      kdDiff: kdDiff,
+      ratingOverall: ratingOverall,
+      logoUrl: logoUrl,
+      rank: rank,
+    );
+  }
 
   factory TeamModel.fromMap(Map<String, Object?> map) {
     return TeamModel(

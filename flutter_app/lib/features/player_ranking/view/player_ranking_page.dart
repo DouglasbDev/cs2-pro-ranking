@@ -6,6 +6,7 @@ import '../../../core/navigation/slide_fade_route.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/country_flags.dart';
 import '../../../core/widgets/app_image.dart';
+import '../../../core/widgets/debounced_search_field.dart';
 import '../../../core/widgets/pressable_scale.dart';
 import '../../../core/widgets/rank_badge.dart';
 import '../../../core/widgets/side_toggle.dart';
@@ -42,11 +43,24 @@ class _PlayerRankingBody extends StatelessWidget {
               child: CircularProgressIndicator(color: AppColors.gold)),
           PlayerRankingError(:final message) =>
             Center(child: Text('Error loading players: $message')),
-          PlayerRankingLoaded(:final sortedPlayers, :final selectedSide) =>
+          PlayerRankingLoaded(
+            :final sortedPlayers,
+            :final selectedSide,
+            :final searchQuery
+          ) =>
             Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: DebouncedSearchField(
+                    hintText: 'Search players...',
+                    onChanged: (query) => context
+                        .read<PlayerRankingBloc>()
+                        .add(SearchQueryChanged(query)),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: SideToggle(
@@ -59,8 +73,11 @@ class _PlayerRankingBody extends StatelessWidget {
                 ),
                 const _ColumnHeaders(),
                 Expanded(
-                  child:
-                      _PlayerList(players: sortedPlayers, side: selectedSide),
+                  child: _PlayerList(
+                    players: sortedPlayers,
+                    side: selectedSide,
+                    searchQuery: searchQuery,
+                  ),
                 ),
               ],
             ),
@@ -110,22 +127,27 @@ class _ColumnHeaders extends StatelessWidget {
 }
 
 class _PlayerList extends StatelessWidget {
-  const _PlayerList({required this.players, required this.side});
+  const _PlayerList({required this.players, required this.side, required this.searchQuery});
 
   final List<PlayerModel> players;
   final Side side;
+  final String searchQuery;
 
   @override
   Widget build(BuildContext context) {
     if (players.isEmpty) {
-      return const Center(child: Text('No players found'));
+      return Center(
+        child: Text(
+          searchQuery.isEmpty ? 'No players found' : 'No players match "$searchQuery"',
+        ),
+      );
     }
     return StaggeredEntranceList(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       itemCount: players.length,
       itemBuilder: (context, index) {
         final player = players[index];
-        return _PlayerRow(rank: index + 1, player: player, side: side);
+        return _PlayerRow(rank: player.rank ?? index + 1, player: player, side: side);
       },
     );
   }

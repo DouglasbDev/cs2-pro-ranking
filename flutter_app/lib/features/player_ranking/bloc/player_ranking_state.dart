@@ -17,12 +17,17 @@ class PlayerRankingLoaded extends PlayerRankingState {
   const PlayerRankingLoaded({
     required this.players,
     this.selectedSide = Side.both,
+    this.searchQuery = '',
   });
 
   final List<PlayerModel> players;
   final Side selectedSide;
+  final String searchQuery;
 
   List<PlayerModel> get sortedPlayers {
+    // Rank must reflect each player's position in the FULL list for the
+    // current side, not the index within whatever search happens to leave
+    // visible — so sort+rank first, filter after, never the other way.
     final sorted = [...players];
     sorted.sort((a, b) {
       final ratingA = a.ratingFor(selectedSide);
@@ -32,12 +37,22 @@ class PlayerRankingLoaded extends PlayerRankingState {
       if (ratingB == null) return -1;
       return ratingB.compareTo(ratingA);
     });
-    return sorted;
+
+    final ranked = [
+      for (var i = 0; i < sorted.length; i++) sorted[i].copyWithRank(i + 1),
+    ];
+
+    final query = searchQuery.trim().toLowerCase();
+    if (query.isEmpty) return ranked;
+    return ranked.where((p) => p.nickname.toLowerCase().contains(query)).toList();
   }
 
-  PlayerRankingLoaded copyWith({Side? selectedSide}) {
+  PlayerRankingLoaded copyWith({Side? selectedSide, String? searchQuery}) {
     return PlayerRankingLoaded(
-        players: players, selectedSide: selectedSide ?? this.selectedSide);
+      players: players,
+      selectedSide: selectedSide ?? this.selectedSide,
+      searchQuery: searchQuery ?? this.searchQuery,
+    );
   }
 }
 

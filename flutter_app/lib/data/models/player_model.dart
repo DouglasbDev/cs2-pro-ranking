@@ -27,6 +27,7 @@ class PlayerModel {
     this.assistsPerRound,
     this.mapsPlayed,
     this.imageUrl,
+    this.rank,
   });
 
   final int id;
@@ -54,6 +55,44 @@ class PlayerModel {
   final double? assistsPerRound;
   final int? mapsPlayed;
   final String? imageUrl;
+
+  /// Position in the full ranked list for the side it was computed under —
+  /// assigned once by whoever sorts the complete list (see
+  /// PlayerRankingLoaded.sortedPlayers), never recomputed from a filtered
+  /// list's index. Null for players fetched outside a ranking context
+  /// (player detail, team roster).
+  final int? rank;
+
+  PlayerModel copyWithRank(int rank) {
+    return PlayerModel(
+      id: id,
+      nickname: nickname,
+      fullName: fullName,
+      age: age,
+      country: country,
+      teamId: teamId,
+      teamName: teamName,
+      ratingOverall: ratingOverall,
+      ratingCtSide: ratingCtSide,
+      ratingTSide: ratingTSide,
+      kdRatio: kdRatio,
+      kdDiffCtSide: kdDiffCtSide,
+      kdDiffTSide: kdDiffTSide,
+      roundsPlayedCtSide: roundsPlayedCtSide,
+      roundsPlayedTSide: roundsPlayedTSide,
+      totalKills: totalKills,
+      totalDeaths: totalDeaths,
+      damagePerRound: damagePerRound,
+      headshotPercentage: headshotPercentage,
+      kastPercentage: kastPercentage,
+      killsPerRound: killsPerRound,
+      deathsPerRound: deathsPerRound,
+      assistsPerRound: assistsPerRound,
+      mapsPlayed: mapsPlayed,
+      imageUrl: imageUrl,
+      rank: rank,
+    );
+  }
 
   factory PlayerModel.fromMap(Map<String, Object?> map) {
     return PlayerModel(

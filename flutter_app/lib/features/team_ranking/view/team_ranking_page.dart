@@ -5,6 +5,7 @@ import '../../../core/navigation/slide_fade_route.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/country_flags.dart';
 import '../../../core/widgets/app_image.dart';
+import '../../../core/widgets/debounced_search_field.dart';
 import '../../../core/widgets/pressable_scale.dart';
 import '../../../core/widgets/rank_badge.dart';
 import '../../../core/widgets/staggered_entrance_list.dart';
@@ -40,7 +41,22 @@ class _TeamRankingBody extends StatelessWidget {
               child: CircularProgressIndicator(color: AppColors.gold)),
           TeamRankingError(:final message) =>
             Center(child: Text('Error loading teams: $message')),
-          TeamRankingLoaded(:final teams) => _TeamList(teams: teams),
+          TeamRankingLoaded(:final filteredTeams, :final searchQuery) => Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: DebouncedSearchField(
+                    hintText: 'Search teams...',
+                    onChanged: (query) => context
+                        .read<TeamRankingBloc>()
+                        .add(TeamSearchQueryChanged(query)),
+                  ),
+                ),
+                Expanded(
+                  child: _TeamList(teams: filteredTeams, searchQuery: searchQuery),
+                ),
+              ],
+            ),
         };
       },
     );
@@ -48,21 +64,26 @@ class _TeamRankingBody extends StatelessWidget {
 }
 
 class _TeamList extends StatelessWidget {
-  const _TeamList({required this.teams});
+  const _TeamList({required this.teams, required this.searchQuery});
 
   final List<TeamModel> teams;
+  final String searchQuery;
 
   @override
   Widget build(BuildContext context) {
     if (teams.isEmpty) {
-      return const Center(child: Text('No teams found'));
+      return Center(
+        child: Text(
+          searchQuery.isEmpty ? 'No teams found' : 'No teams match "$searchQuery"',
+        ),
+      );
     }
     return StaggeredEntranceList(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       itemCount: teams.length,
       itemBuilder: (context, index) {
         final team = teams[index];
-        return _TeamRow(rank: index + 1, team: team);
+        return _TeamRow(rank: team.rank ?? index + 1, team: team);
       },
     );
   }
